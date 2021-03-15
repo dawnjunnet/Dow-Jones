@@ -1,6 +1,14 @@
 rm(list = ls())
-setwd('/Users/dawnstaana/Documents/NUS/Year 4/Sem 2/EC4304/Data')
+setwd('/Users/kaijing/Documents/EC4304/Dow-Jones/Data')
 library(readxl)
+library(lubridate)
+library(magrittr) 
+library(dplyr)
+library(tidyr)
+library(plyr)
+library(DataCombine)
+library(zoo)
+library(stringi)
 
 dji = read.csv('^DJI.csv')
 head(dji)
@@ -11,7 +19,7 @@ pct = function(df,col){
   xx = c()
   for (i in 1:nrow(df)){
     res = (df[[col]][i+1]-df[[col]][i])/df[[col]][i]
-    print(i)
+    print(res)
     xx = c(xx,res)
   }
   return(xx)
@@ -39,7 +47,7 @@ head(final)
 
 vix = read.csv('^VIX.csv')
 vix = clean(vix,'Close','vix_pctchg')
-View(vix)
+#View(vix)
 final = inner_join(final,vix,by='Date')
 head(final)
 
@@ -54,7 +62,7 @@ for (i in which(is.na(libor$Close))){ #random walk to fill NA
 }
 
 libor = clean(libor,'Close','libor_pctchg')
-View(libor)
+#View(libor)
 final = inner_join(final,libor,by='Date')
 head(final)
 
@@ -71,7 +79,7 @@ for (i in which(is.na(dxynb$Close))){ #random walk to fill NA
 # plot(dxynb$Close)
 dxynb = clean(dxynb,'Close','dxynb_pctchg')
 head(dxynb)
-View(dxynb)
+#View(dxynb)
 final = inner_join(final,dxynb,by='Date')
 final$Date[nrow(final)]
 
@@ -80,7 +88,7 @@ colnames(ffr)[1] = 'Date'
 colnames(ffr)[2] = 'Close'
 head(ffr)
 ffr = clean(ffr,'Close','ffr_pctchg')
-View(ffr)
+#View(ffr)
 final = inner_join(final,ffr,by='Date')
 # plot(final$ffr_pctchg,type = 'l')
 
@@ -105,7 +113,7 @@ str(ind_prod)
 ind_prod$Date = as.Date(ind_prod$Date)
 ind_date = seq(ymd(ind_prod$Date[1]),ymd(ind_prod$Date[nrow(ind_prod)]),by='1 day')
 xx = data.frame(Date = ind_date) %>% left_join(ind_prod,by='Date')
-View(xx)
+#View(xx)
 xx = fill(xx,'Close')
 
 # plot(xx$Close)
@@ -135,57 +143,112 @@ colnames(unrate)[2] = 'unrate'
 unrate_date = seq(ymd(unrate$Date[1]),ymd(unrate$Date[nrow(unrate)]),by='1 day')
 xx = data.frame(Date = unrate_date) %>% left_join(unrate,by='Date')
 xx = fill(xx,'unrate')
-View(xx)
+#View(xx)
 final = inner_join(final,xx,by='Date')
 
 ### INFLATION ISSUE
 inf = read_xlsx('USInfationRateMonthly.xlsx')
-View(inf)
+#View(inf)
 str(inf)
 inf$Date = as.Date(inf$Date)
 plot(inf$USINF)
 View(inf)
 unrate_date = seq(ymd(inf$Date[1]),ymd(inf$Date[nrow(inf)]),by='1 day')
 xx = data.frame(Date = unrate_date) %>% left_join(inf[,c('Date','USINF')],by='Date')
-View(xx)
+#View(xx)
 xx = fill(xx,'USINF')
-View(xx)
+#View(xx)
 plot(xx$USINF)
 inf = clean(xx,'USINF','inf_pctchg')
 plot(inf$inf_pctchg)
 final = inner_join(final,inf,by='Date')
 plot(final$inf_pctchg)
 
+pe = read.csv('PE_ratio.csv',stringsAsFactors = F)
+str(pe$Date)
+pe$Date = as.Date(pe$Date, format = "%d/%m/%y")
+pe$Date[nrow(pe)]
+colnames(pe)[1] = 'Date'
+#View(pe)
+
+unrate_date = seq(ymd(pe$Date[1]),ymd(pe$Date[nrow(pe)]),by='1 day')
+xx = data.frame(Date = unrate_date) %>% left_join(pe,by='Date')
+xx = fill(xx,'PE_Ratio')
+xx$PE_Ratio = as.numeric(xx$PE_Ratio)
+#View(xx)
+pe_ratio = clean(xx,'PE_Ratio','peratio_pctchg')
+final = inner_join(final,pe_ratio,by='Date')
+final[is.na(final)] <- 0
+#View(final)
+
+div_yield = read.csv('Dividend_Yield.csv',stringsAsFactors = F)
+str(div_yield$Date)
+div_yield$Date = as.Date(div_yield$Date, format = "%d/%m/%y")
+div_yield$Date[nrow(div_yield)]
+colnames(div_yield)[1] = 'Date'
+#View(div_yield)
+
+unrate_date = seq(ymd(div_yield$Date[1]),ymd(div_yield$Date[nrow(div_yield)]),by='1 day')
+xx = data.frame(Date = unrate_date) %>% left_join(div_yield,by='Date')
+xx = fill(xx,'Dividend_Yield')
+xx$Dividend_Yield = as.numeric(xx$Dividend_Yield)
+#View(xx)
+div_yield = clean(xx,'Dividend_Yield','divyield_pctchg')
+final = inner_join(final,div_yield,by='Date')
+final[is.na(final)] <- 0
+#View(final)
+
+priceToBook = read.csv('PriceToBookRatio.csv',stringsAsFactors = F)
+str(priceToBook$Date)
+priceToBook$Date = as.Date(priceToBook$Date, format = "%d/%m/%y")
+priceToBook$Date[nrow(priceToBook)]
+colnames(priceToBook)[1] = 'Date'
+#View(priceToBook)
+
+unrate_date = seq(ymd(priceToBook$Date[1]),ymd(priceToBook$Date[nrow(priceToBook)]),by='1 day')
+xx = data.frame(Date = unrate_date) %>% left_join(priceToBook,by='Date')
+xx$Price_To_Book.Ratio = as.numeric(xx$Price_To_Book.Ratio)
+xx = fill(xx,'Price_To_Book.Ratio')
+#View(xx)
+priceToBook = clean(xx,'Price_To_Book.Ratio','priceToBook_pctchg')
+final = inner_join(final,priceToBook,by='Date')
+final[is.na(final)] <- 0
+#View(final)
+
 m1 = read.csv('M1 (weekly) seasonally adjusted.csv',stringsAsFactors = F)
 str(m1)
 m1$DATE = as.Date(m1$DATE)
 m1$DATE[nrow(m1)]
 colnames(m1)[1] = 'Date'
-View(m1)
+#View(m1)
 # m1 = clean(m1,'M1','m1_pctchg')
+ 
 unrate_date = seq(ymd(m1$Date[1]),ymd(m1$Date[nrow(m1)]),by='1 day')
 xx = data.frame(Date = unrate_date) %>% left_join(m1,by='Date')
-View(xx)
-m1 = fill(xx,'M1')
-m1 = clean(xx,'M1','m1_pctchg')
-plot(xx$m1_pctchg)
-final$m1_pctchg = NULL
+xx = fill(xx,'M1')
 final = inner_join(final,xx,by='Date')
-plot(final$m1_pctchg)
+final = change(final, Var='M1',  type = "percent")
+final = subset(final, select = -c(M1) )
+final <- rename(final,c('M1_PChangeFrom-1'='m1_pctchg'))
+#View(final)
 
 m2 = read.csv('M2 (weekly) seasonally adjusted.csv',stringsAsFactors = F)
 str(m2)
 m2$DATE = as.Date(m2$DATE)
-colnames(m2)[1] = 'Date'
 m2$Date[nrow(m2)]
+colnames(m2)[1] = 'Date'
+
 # m2 = clean(m2,'M2','m2_pctchg')
 unrate_date = seq(ymd(m2$Date[1]),ymd(m2$Date[nrow(m2)]),by='1 day')
 xx = data.frame(Date = unrate_date) %>% left_join(m2,by='Date')
 xx = fill(xx,'M2')
-m2 = clean(xx,'M2','m2_pctchg')
-final$m2_pctchg = NULL
-final = inner_join(final,m2,by='Date')
-plot(final$m2_pctchg)
+final = inner_join(final,xx,by='Date')
+final = change(final, Var='M2',  type = "percent")
+# drop initial M2 column
+final = subset(final, select = -c(M2))
+final <- rename(final,c('M2_PChangeFrom-1'='m2_pctchg'))
+final[is.na(final)] <- 0
+#View(final)
 # write.csv(final, 'final.csv')
 
 tspread5 = read.csv('termspread3mth5yr.csv',stringsAsFactors = F)
@@ -213,6 +276,7 @@ for (i in which(is.na(tspread10$Close))){ #random walk to fill NA
 plot(tspread10)
 tspread10 = clean(tspread10,'Close','t10_pctchg')
 final = inner_join(final,tspread10,by='Date')
-# write.csv(final,'final.csv')
+View(final)
+ write.csv(final,'final.csv')
 
 
