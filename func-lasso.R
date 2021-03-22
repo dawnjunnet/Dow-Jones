@@ -29,6 +29,7 @@
 
 #5) IC - information criterion used to select lambda. Can set to: "bic", "aic" or "aicc"
 
+#IMPORTANT: THIS LAG PASSED IN IS ACTUALLY THE FORECAST HORIZON!!
 runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
   
   comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
@@ -68,14 +69,14 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
 
 #6) IC - information criterion used to select lambda. Can set to: "bic", "aic" or "aicc"
 
-
+#IMPORTANT: THIS LAG PASSED IN IS ACTUALLY THE FORECAST HORIZON!!
 lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
   
   save.coef=matrix(NA,nprev,21 + ncol(Y[,-indice])*4) #blank matrix for coefficients at each iteration
   print(21 + ncol(Y[,-indice])*4)
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = NULL #create variable to store model
-  for(i in nprev:1){ #NB: backwards FOR loop: going from 180 down to 1
+  for(i in nprev:1){ #NB: backwards FOR loop: going from (total sample size - nprev) down to 1
     Y.window=Y[(1+nprev-i):(nrow(Y)-i),] #define the train window
     lasso=runlasso(Y.window,indice,lag,alpha,IC, family) #call the function to fit the LASSO/ElNET selected on IC and generate h-step forecast
     print(length(lasso$model$coef))
