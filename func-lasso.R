@@ -2,10 +2,10 @@
 ## Data Visualisation
 ###############################################################################
 #correlation plot
-res = cor(Y)
-round(res, 2)
-corrplot(res, order = "hclust", 
-         tl.col = "black", tl.srt = 45)
+#res = cor(Y)
+#round(res, 2)
+#corrplot(res, order = "hclust", 
+#         tl.col = "black", tl.srt = 45)
 
 #Here we follow Medeiros et al. (2019) in defining four functions:
 
@@ -69,7 +69,7 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
 #6) IC - information criterion used to select lambda. Can set to: "bic", "aic" or "aicc"
 
 
-lasso.rolling.window=function(Y,nprev,indice=1,lag=1,alpha=1,IC="bic", family){
+lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
   
   save.coef=matrix(NA,nprev,21 + ncol(Y[,-indice])*4) #blank matrix for coefficients at each iteration
   print(21 + ncol(Y[,-indice])*4)
@@ -156,7 +156,7 @@ runpols=function(Y,indice,lag,coef){
 #5) coef - LASSO coefficients from previous results
 
 
-pols.rolling.window=function(Y,nprev,indice=1,lag=1,coef){
+pols.rolling.window=function(Y,nprev,indice=1,lag,coef){
   
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = NULL
