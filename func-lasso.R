@@ -199,14 +199,29 @@ extract_name = function(Y,lag,h){
 }
 
 ###################################
+# extract the column names        #
+# Y = matrix of df                #
+# lag = number of lags considered #
+###################################
+extract_test_name = function(Y,lag){
+  name = c()
+  
+  for (i in 1:lag) {
+    for (j in colnames(Y)) {
+      name = c(name,paste(j,'_lag',i,sep = ''))
+    }
+  }
+  return(name)
+}
+###################################
 # running adl function            #
-# Y = df,                         #
+# Y = matrix of df                #
 # indice = indice of Y variable   #
 # lag = number of lags considered #
 # h = number of steps of forecast #
 ###################################
 runadl=function(Y,indice,h,lag){
-
+  
   aux=embed(Y,h+lag) #create lags + forecast horizon shift (=lag option)
   colnames(aux) = extract_name(Y,lag,h) #get colnames
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
@@ -217,21 +232,22 @@ runadl=function(Y,indice,h,lag){
   if(h==1){
     X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast
     X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
-    colnames(X.out) = colnames(X) #get colnames of test set
+    
   }else{
     X.out=aux[,-c(1:(ncol(Y)*(h-1)))] #delete first (h-1) columns of aux,
-    X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
-    colnames(X.out) = colnames(X) #get colnames of test set
     X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
+    X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
   }
+  colnames(X.out) = extract_test_name(Y,lag) #get colnames of test set
   model = lm(y~.,data = train) #run adl model
   pred=predict(model,X.out) #generate the forecast (note c(X.out,0) gives the last observations on X's and the dummy (the zero))
   return(list("model"=model,"pred"=pred,"AIC"=AIC(model))) #return the estimated model and h-step forecast
 }
 
+
 ###########################################
 # running adl function (rolling window)   #
-# Y = df,                                 #
+# Y = matrix of df                        #
 # nprev = no of observation for test set  #
 # indice = indice of Y variable           #
 # lag = number of lags considered         #
