@@ -30,8 +30,10 @@ Y = data.matrix(df)
 #get dependent variable we want to predict
 yy = df$dji_pctchg
 #test data 
-nprev = 2230 #approx 1/3 of data for test set size
+nprev = 2600 #approx 1/3 of data for test set size
 oosy = tail(yy,nprev)
+
+
 
 ###############################################################################
 ## inspect data
@@ -92,3 +94,11 @@ pred30a.plasso = forecast(pols.lasso30a$model, tail(Y, 2230), 1, 14, 2)
 pred30a.plasso
 #pred12a.plasso = forecast(pols.lasso12a$model, tail(Y, 60), 1, 12, 2)
 #pred12a.plasso
+
+#ADL 1 step ahead forecast
+#1 step ahead forecast
+# from my code Y is a df
+cc = adl.rolling.window(as.dataframe(Y),nprev,indice = 1,h=1,lag)
+cc$pred
+# write.csv(cc$pred,'adl1step_pred.csv')
+cc$errors
