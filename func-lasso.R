@@ -34,15 +34,20 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
   
   comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
   Y2=cbind(Y,comp$scores[,1:4]) #augment predictors by the first 4 principal components
-  aux=embed(Y2,4+lag) #create 4 lags + forecast horizon shift (=lag option)
+  aux=embed(Y2,30+lag) #create 30 lags + forecast horizon shift (=lag option)
+  colnames(aux) = extract_name(Y,30,lag) #get colnames
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
   X=aux[,-c(1:(ncol(Y2)*lag))]  # lags of Y (predictors) corresponding to forecast horizon   
   
   if(lag==1){
     X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast  
+    df.X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
+    colnames(df.X.out) = colnames(X) #get colnames of test set
   }else{
     X.out=aux[,-c(1:(ncol(Y2)*(lag-1)))] #delete first (h-1) columns of aux,
     X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
+    df.X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
+    colnames(df.X.out) = colnames(X) #get colnames of test set
   }
   
   #Here we use the glmnet wrapper written by the authors that does selection on IC:
@@ -72,8 +77,7 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
 #IMPORTANT: THIS LAG PASSED IN IS ACTUALLY THE FORECAST HORIZON!!
 lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
   
-  save.coef=matrix(NA,nprev,21 + ncol(Y[,-indice])*4) #blank matrix for coefficients at each iteration
-  print(21 + ncol(Y[,-indice])*4)
+  save.coef=matrix(NA,nprev,481) #blank matrix for coefficients at each iteration
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = NULL #create variable to store model
   for(i in nprev:1){ #NB: backwards FOR loop: going from (total sample size - nprev) down to 1
@@ -115,7 +119,7 @@ runpols=function(Y,indice,lag,coef){
   
   comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
   Y2=cbind(Y,comp$scores[,1:4]) #augment predictors by the first 4 principal components
-  aux=embed(Y2,4+lag) #create 4 lags + forecast horizon shift (=lag option)
+  aux=embed(Y2,30+lag) #create 4 lags + forecast horizon shift (=lag option)
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due do lags
   X=aux[,-c(1:(ncol(Y2)*lag))]   # lags of Y (predictors) corresponding to forecast horizon   
   
@@ -179,4 +183,21 @@ pols.rolling.window=function(Y,nprev,indice=1,lag,coef){
   errors=c("rmse"=rmse,"mse"=mse, "mae"=mae) #stack errors in a vector
   
   return(list("pred"=save.pred,"errors"=errors, "model"=model)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
+}
+
+###################################
+# extract the column names        #
+# Y = df,                         #
+# lag = number of lags considered #
+# h = number of steps of forecast #
+###################################
+extract_name = function(Y,lag,h){
+  names_aux = c(colnames(Y))
+  
+  for (i in 1:(h+lag-1)){
+    for (j in colnames(Y)){
+      names_aux = c(names_aux,paste(j,i,sep = ''))
+    }
+  }
+  return(names_aux)
 }

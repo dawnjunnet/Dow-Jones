@@ -30,7 +30,7 @@ Y = data.matrix(df)
 #get dependent variable we want to predict
 yy = df$dji_pctchg
 #test data 
-nprev = 2230 #approx 1/3 of data for test set size
+nprev = 2495 #test date starts on 4/1/2010
 oosy = tail(yy,nprev)
 
 ###############################################################################
@@ -52,13 +52,16 @@ alpha=1 #set alpha=1 for LASSO
 
 #Run forecasts for LASSO (BIC)
 #The SP500R dependent variable is in the 1st position
-#forecast horizon 1 week, 2 week, 30 days
-lasso1a=lasso.rolling.window(Y,nprev,1,7,alpha,IC="bic", "gaussian")
+#forecast horizon 1 day, 1 week, 2 week, 30 days
+lasso1a=lasso.rolling.window(Y,nprev,1,1,alpha,IC="bic", "gaussian")
+lasso1a$pred
+write.csv(lasso1a$pred,'lasso1step_pred.csv')
+lasso7a=lasso.rolling.window(Y,nprev,1,7,alpha,IC="bic", "gaussian")
 lasso14a=lasso.rolling.window(Y,nprev,1,14,alpha,IC="bic", "gaussian")
 lasso30a=lasso.rolling.window(Y,nprev,1,30,alpha,IC="bic", "gaussian")
-#lasso12a=lasso.rolling.window(Y,nprev,1,365,alpha,IC="bic", "gaussian")
 
-lassoa.mse1=lasso1a$errors[2]
+lasso1a.mse1=lasso1a$errors[2]
+write.csv(lasso1a$errors,'lasso1step_errors.csv')
 lassoa.mse14=lasso14a$errors[2]
 lassoa.mse30=lasso30a$errors[2]
 #lassoa.mse12=lasso12a$errors[2]
