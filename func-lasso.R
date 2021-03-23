@@ -4,7 +4,7 @@
 #correlation plot
 #res = cor(Y)
 #round(res, 2)
-#corrplot(res, order = "hclust", 
+#corrplot(res, order = "hclust",
 #         tl.col = "black", tl.srt = 45)
 
 #Here we follow Medeiros et al. (2019) in defining four functions:
@@ -31,25 +31,25 @@
 
 #IMPORTANT: THIS LAG PASSED IN IS ACTUALLY THE FORECAST HORIZON!!
 runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
-  
+
   comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
   Y2=cbind(Y,comp$scores[,1:4]) #augment predictors by the first 4 principal components
   aux=embed(Y2,30+lag) #create 30 lags + forecast horizon shift (=lag option)
 
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
-  X=aux[,-c(1:(ncol(Y2)*lag))]  # lags of Y (predictors) corresponding to forecast horizon   
-  
+  X=aux[,-c(1:(ncol(Y2)*lag))]  # lags of Y (predictors) corresponding to forecast horizon
+
   if(lag==1){
-    X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast  
+    X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast
   }else{
     X.out=aux[,-c(1:(ncol(Y2)*(lag-1)))] #delete first (h-1) columns of aux,
     X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
   }
-  
+
   #Here we use the glmnet wrapper written by the authors that does selection on IC:
   model=ic.glmnet(X,y,crit=IC,alpha = alpha, family) #fit the LASSO/ElNet model selected on IC
   pred=predict(model,X.out) #generate the forecast (note c(X.out,0) gives the last observations on X's and the dummy (the zero))
-  
+
   return(list("model"=model,"pred"=pred)) #return the estimated model and h-step forecast
 }
 
@@ -72,7 +72,7 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
 
 #IMPORTANT: THIS LAG PASSED IN IS ACTUALLY THE FORECAST HORIZON!!
 lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
-  
+
   save.coef=matrix(NA,nprev,451) #blank matrix for coefficients at each iteration
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = NULL #create variable to store model
@@ -89,12 +89,12 @@ lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
   real=Y[,indice] #get actual values
   plot(real,type="l")
   lines(c(rep(NA,length(real)-nprev),save.pred),col="red") #padded with NA for blanks, plot predictions vs. actual
-  
+
   rmse=sqrt(mean((tail(real,nprev)-save.pred)^2)) #compute RMSE
   mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
   mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
   errors=c("rmse"=rmse,"mse"=mse,"mae"=mae) #stack errors in a vector
-  
+
   return(list("pred"=save.pred,"coef"=save.coef,"errors"=errors, "model"=model)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
 
@@ -112,32 +112,32 @@ lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
 #4) coef - LASSO coefficients from previous results
 
 runpols=function(Y,indice,lag,coef){
-  
+
   comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
   Y2=cbind(Y,comp$scores[,1:4]) #augment predictors by the first 4 principal components
   aux=embed(Y2,30+lag) #create 4 lags + forecast horizon shift (=lag option)
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due do lags
-  X=aux[,-c(1:(ncol(Y2)*lag))]   # lags of Y (predictors) corresponding to forecast horizon   
-  
+  X=aux[,-c(1:(ncol(Y2)*lag))]   # lags of Y (predictors) corresponding to forecast horizon
+
   if(lag==1){
     X.out=tail(aux,1)[1:ncol(X)]  #retrieve last observations if one-step forecast
   }else{
     X.out=aux[,-c(1:(ncol(Y2)*(lag-1)))] #delete first (h-1) columns of aux,
     X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_T-1...y_T-h
   }
-  
+
   respo=X[,which(coef[-1]!=0)] #variables selectd by LASSO; find nonzero coefficients in the supplied LASSO coefficient vector and keep corresponding X's
   if(length(respo)==0){ #if no nozero coefficients (full shrinkage)
     model=lm(y ~ 1) #regress on a constant only
   }else{
     model=lm(y ~ respo) #else, run OLS with selected predictors
   }
-  
+
   X.out=c(X.out) #last observations
   coeff=coef(model) #vector of OLS coefficients
   coeff[is.na(coeff)]=0 #if NA set to 0
   pred=c(1,X.out[which(coef[-1]!=0)])%*%coeff #form prediction
-  
+
   return(list("model"=model,"pred"=pred)) #save OLS model estimates and forecast
 }
 
@@ -158,7 +158,7 @@ runpols=function(Y,indice,lag,coef){
 
 
 pols.rolling.window=function(Y,nprev,indice=1,lag,coef){
-  
+
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = NULL
   for(i in nprev:1){#NB: backwards FOR loop: going from 180 down to 1
@@ -172,12 +172,12 @@ pols.rolling.window=function(Y,nprev,indice=1,lag,coef){
   real=Y[,indice] #get actual values
   plot(real,type="l")
   lines(c(rep(NA,length(real)-nprev),save.pred),col="red") #padded with NA for blanks, plot predictions vs. actual
-  
+
   rmse=sqrt(mean((tail(real,nprev)-save.pred)^2)) #compute RMSE
   mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
   mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
   errors=c("rmse"=rmse,"mse"=mse, "mae"=mae) #stack errors in a vector
-  
+
   return(list("pred"=save.pred,"errors"=errors, "model"=model)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
 
@@ -189,7 +189,7 @@ pols.rolling.window=function(Y,nprev,indice=1,lag,coef){
 ###################################
 extract_name = function(Y,lag,h){
   names_aux = c(colnames(Y))
-  
+
   for (i in 1:(h+lag-1)){
     for (j in colnames(Y)){
       names_aux = c(names_aux,paste(j,i,sep = ''))
@@ -199,8 +199,23 @@ extract_name = function(Y,lag,h){
 }
 
 ###################################
+# extract the column names        #
+# Y = matrix of df                #
+# lag = number of lags considered #
+###################################
+extract_test_name = function(Y,lag){
+  name = c()
+
+  for (i in 1:lag) {
+    for (j in colnames(Y)) {
+      name = c(name,paste(j,'_lag',i,sep = ''))
+    }
+  }
+  return(name)
+}
+###################################
 # running adl function            #
-# Y = df,                         #
+# Y = matrix of df                #
 # indice = indice of Y variable   #
 # lag = number of lags considered #
 # h = number of steps of forecast #
@@ -211,40 +226,41 @@ runadl=function(Y,indice,h,lag){
   colnames(aux) = extract_name(Y,lag,h) #get colnames
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
   X=aux[,-c(1:(ncol(Y)*h))]  # lags of Y (predictors) corresponding to forecast horizon
-  
+
   train = data.frame(cbind(y,X)) #combine y and X into a dataframe
-  
+
   if(h==1){
     X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast
-    df.X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
-    colnames(df.X.out) = colnames(X) #get colnames of test set
+    X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
+
   }else{
     X.out=aux[,-c(1:(ncol(Y)*(h-1)))] #delete first (h-1) columns of aux,
     X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
-    df.X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
-    colnames(df.X.out) = colnames(X) #get colnames of test set
+    X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
   }
+  colnames(X.out) = extract_test_name(Y,lag) #get colnames of test set
   model = lm(y~.,data = train) #run adl model
   pred=predict(model,X.out) #generate the forecast (note c(X.out,0) gives the last observations on X's and the dummy (the zero))
   return(list("model"=model,"pred"=pred,"AIC"=AIC(model))) #return the estimated model and h-step forecast
 }
 
+
 ###########################################
 # running adl function (rolling window)   #
-# Y = df,                                 #
+# Y = matrix of df                        #
 # nprev = no of observation for test set  #
 # indice = indice of Y variable           #
 # lag = number of lags considered         #
 # h = number of steps of forecast         #
 ###########################################
 adl.rolling.window=function(Y,nprev,indice=1,h,lag){
-  
+
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = list() #create variable to store model
   for(i in nprev:1){ #NB: backwards FOR loop: going from 180 down to 1
     Y.window=Y[(1+nprev-i):(nrow(Y)-i),] #define the train window
     lst = data.frame() #save result of lags and AIC for each lags
-    for(j in 1:30){ #run on 30 lags 
+    for(j in 1:30){ #run on 30 lags
       adl=runadl(Y.window,indice,h,lag=j) #call the function to fit the LASSO/ElNET selected on IC and generate h-step forecast
       res = data.frame(lag=j,AIC=adl$AIC) #df of lag and AIC
       lst = rbind(lst,res) #rbind to main result
@@ -260,11 +276,11 @@ adl.rolling.window=function(Y,nprev,indice=1,h,lag){
   real=Y[,indice] #get actual values
   plot(real,type="l")
   lines(c(rep(NA,length(real)-nprev),save.pred),col="red") #padded with NA for blanks, plot predictions vs. actual
-  
+
   rmse=sqrt(mean((tail(real,nprev)-save.pred)^2)) #compute RMSE
   mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
   mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
   errors=c("rmse"=rmse,"mse"=mse,"mae"=mae) #stack errors in a vector
-  
+
   return(list("pred"=save.pred,"errors"=errors, "optlag"=model$optlag,"optAIC"=model$optAIC)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
