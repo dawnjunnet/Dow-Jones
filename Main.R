@@ -6,7 +6,7 @@ library(glmnet)
 library(HDeconometrics)
 
 ##########################################################
-#read data 
+#read data
 #########################################################
 setwd('/Users/kaijing/Documents/EC4304/Dow-Jones/Data')
 df <- read.csv("final.csv")
@@ -16,7 +16,7 @@ df <- subset(df, select=-c(X, Date, inf_pctchg))
 #if there are non-finite datapoints, we just set it to NA
 is.na(df) <- sapply(df, is.infinite)
 #set all NA datapoints to 0
-df[is.na(df)] <- 0 
+df[is.na(df)] <- 0
 #write.csv(df,'final.csv')
 
 #check to make sure without_na dataframe should be have the same number of observations as initial df
@@ -29,9 +29,11 @@ without_na = df[complete.cases(df), ]
 Y = data.matrix(df)
 #get dependent variable we want to predict
 yy = df$dji_pctchg
-#test data 
+#test data
 nprev = 2495 #test date starts on 4/1/2010
 oosy = tail(yy,nprev)
+
+
 
 ###############################################################################
 ## inspect data
@@ -95,3 +97,11 @@ pred30a.plasso = forecast(pols.lasso30a$model, tail(Y, 2230), 1, 14, 2)
 pred30a.plasso
 #pred12a.plasso = forecast(pols.lasso12a$model, tail(Y, 60), 1, 12, 2)
 #pred12a.plasso
+
+#ADL 1 step ahead forecast
+#1 step ahead forecast
+# from my code Y is a df
+cc = adl.rolling.window(as.dataframe(Y),nprev,indice = 1,h=1,lag)
+cc$pred
+# write.csv(cc$pred,'adl1step_pred.csv')
+cc$errors
