@@ -180,3 +180,91 @@ pols.rolling.window=function(Y,nprev,indice=1,lag,coef){
   
   return(list("pred"=save.pred,"errors"=errors, "model"=model)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
+
+###################################
+# extract the column names        #
+# Y = df,                         #
+# lag = number of lags considered #
+# h = number of steps of forecast #
+###################################
+extract_name = function(Y,lag,h){
+  names_aux = c(colnames(Y))
+  
+  for (i in 1:(h+lag-1)){
+    for (j in colnames(Y)){
+      names_aux = c(names_aux,paste(j,i,sep = ''))
+    }
+  }
+  return(names_aux)
+}
+
+###################################
+# running adl function            #
+# Y = df,                         #
+# indice = indice of Y variable   #
+# lag = number of lags considered #
+# h = number of steps of forecast #
+###################################
+runadl=function(Y,indice,h,lag){
+
+  aux=embed(Y,h+lag) #create lags + forecast horizon shift (=lag option)
+  colnames(aux) = extract_name(Y,lag,h) #get colnames
+  y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
+  X=aux[,-c(1:(ncol(Y)*h))]  # lags of Y (predictors) corresponding to forecast horizon
+  
+  train = data.frame(cbind(y,X)) #combine y and X into a dataframe
+  
+  if(h==1){
+    X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast
+    X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
+    colnames(X.out) = colnames(X) #get colnames of test set
+  }else{
+    X.out=aux[,-c(1:(ncol(Y)*(h-1)))] #delete first (h-1) columns of aux,
+    X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
+    colnames(X.out) = colnames(X) #get colnames of test set
+    X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
+  }
+  model = lm(y~.,data = train) #run adl model
+  pred=predict(model,X.out) #generate the forecast (note c(X.out,0) gives the last observations on X's and the dummy (the zero))
+  return(list("model"=model,"pred"=pred,"AIC"=AIC(model))) #return the estimated model and h-step forecast
+}
+
+###########################################
+# running adl function (rolling window)   #
+# Y = df,                                 #
+# nprev = no of observation for test set  #
+# indice = indice of Y variable           #
+# lag = number of lags considered         #
+# h = number of steps of forecast         #
+###########################################
+adl.rolling.window=function(Y,nprev,indice=1,h,lag){
+  
+  save.pred=matrix(NA,nprev,1) #blank for forecasts
+  model = list() #create variable to store model
+  for(i in nprev:1){ #NB: backwards FOR loop: going from 180 down to 1
+    Y.window=Y[(1+nprev-i):(nrow(Y)-i),] #define the train window
+    lst = data.frame() #save result of lags and AIC for each lags
+    for(j in 1:30){ #run on 30 lags 
+      adl=runadl(Y.window,indice,h,lag=j) #call the function to fit the LASSO/ElNET selected on IC and generate h-step forecast
+      res = data.frame(lag=j,AIC=adl$AIC) #df of lag and AIC
+      lst = rbind(lst,res) #rbind to main result
+      print(paste(i,j))
+    }
+    opt = which.min(abs(lst$AIC)) #choose optimal lag based on lowest overall AIC
+    lmopt =runadl(Y.window,indice,h,lag=opt) #call the function to fit the optimal lag for subset of train set
+    save.pred[(1+nprev-i),]=lmopt$pred #save the forecast
+    model$optlag = c(model$optlag,lst$lag[opt]) #save optimum lag chosen by AIC
+    model$optAIC = c(model$optAIC,lst$AIC[opt]) #save optimum AIC
+  }
+  #Some helpful stuff:
+  real=Y[,indice] #get actual values
+  plot(real,type="l")
+  lines(c(rep(NA,length(real)-nprev),save.pred),col="red") #padded with NA for blanks, plot predictions vs. actual
+  
+  rmse=sqrt(mean((tail(real,nprev)-save.pred)^2)) #compute RMSE
+  mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
+  mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
+  errors=c("rmse"=rmse,"mse"=mse,"mae"=mae) #stack errors in a vector
+  
+  return(list("pred"=save.pred,"errors"=errors, "optlag"=model$optlag,"optAIC"=model$optAIC)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
+}
