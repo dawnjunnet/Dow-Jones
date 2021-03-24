@@ -267,7 +267,6 @@ adl.rolling.window=function(Y,nprev,indice=1,h,lag){
     opt = which.min(lst$AIC) #choose optimal lag based on lowest overall AIC
     lmopt =runadl(Y.window,indice,h,lag=opt) #call the function to fit the optimal lag for subset of train set
     save.pred[(1+nprev-i),]=lmopt$pred #save the forecast
-    print(lmopt$model)
     model$optlag = c(model$optlag,lst$lag[opt]) #save optimum lag chosen by AIC
     model$optAIC = c(model$optAIC,lst$AIC[opt]) #save optimum AIC
   }
