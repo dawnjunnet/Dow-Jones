@@ -192,12 +192,11 @@ extract_name = function(Y,lag,h){
 
   for (i in 1:(h+lag-1)){
     for (j in colnames(Y)){
-      names_aux = c(names_aux,paste(j,i,sep = ''))
+      names_aux = c(names_aux,paste(j,'_lag',i,sep = ''))
     }
   }
   return(names_aux)
 }
-
 ###################################
 # extract the column names        #
 # Y = matrix of df                #
@@ -232,18 +231,17 @@ runadl=function(Y,indice,h,lag){
   if(h==1){
     X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast
     X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
-
   }else{
     X.out=aux[,-c(1:(ncol(Y)*(h-1)))] #delete first (h-1) columns of aux,
     X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
     X.out = as.data.frame(matrix(X.out,ncol = length(X.out))) #save test set into a df
   }
+  
   colnames(X.out) = extract_test_name(Y,lag) #get colnames of test set
   model = lm(y~.,data = train) #run adl model
   pred=predict(model,X.out) #generate the forecast (note c(X.out,0) gives the last observations on X's and the dummy (the zero))
   return(list("model"=model,"pred"=pred,"AIC"=AIC(model))) #return the estimated model and h-step forecast
 }
-
 
 ###########################################
 # running adl function (rolling window)   #
@@ -260,13 +258,13 @@ adl.rolling.window=function(Y,nprev,indice=1,h,lag){
   for(i in nprev:1){ #NB: backwards FOR loop: going from 180 down to 1
     Y.window=Y[(1+nprev-i):(nrow(Y)-i),] #define the train window
     lst = data.frame() #save result of lags and AIC for each lags
-    for(j in 1:30){ #run on 30 lags
+    for(j in 1:7){ #run on 30 lags 
       adl=runadl(Y.window,indice,h,lag=j) #call the function to fit the LASSO/ElNET selected on IC and generate h-step forecast
       res = data.frame(lag=j,AIC=adl$AIC) #df of lag and AIC
       lst = rbind(lst,res) #rbind to main result
       print(paste(i,j))
     }
-    opt = which.min(abs(lst$AIC)) #choose optimal lag based on lowest overall AIC
+    opt = which.min(lst$AIC) #choose optimal lag based on lowest overall AIC
     lmopt =runadl(Y.window,indice,h,lag=opt) #call the function to fit the optimal lag for subset of train set
     save.pred[(1+nprev-i),]=lmopt$pred #save the forecast
     model$optlag = c(model$optlag,lst$lag[opt]) #save optimum lag chosen by AIC
@@ -281,6 +279,8 @@ adl.rolling.window=function(Y,nprev,indice=1,h,lag){
   mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
   mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
   errors=c("rmse"=rmse,"mse"=mse,"mae"=mae) #stack errors in a vector
-
-  return(list("pred"=save.pred,"errors"=errors, "optlag"=model$optlag,"optAIC"=model$optAIC)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
+  
+  return(list("pred"=save.pred,"errors"=errors, "optlag"=model$optlag,
+              "optAIC"=model$optAIC)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
+
