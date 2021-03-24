@@ -103,11 +103,21 @@ pred30a.plasso
 #pred12a.plasso = forecast(pols.lasso12a$model, tail(Y, 60), 1, 12, 2)
 #pred12a.plasso
 
-#ADL 1 step ahead forecast
-#1 step ahead forecast
-# from my code Y is a df
-cc = adl.rolling.window(Y,nprev,indice = 1,h=1,lag)
-cc = adl.rolling.window(as.dataframe(Y),nprev,indice = 1,h=1,lag)
-cc$pred
-# write.csv(cc$pred,'adl1step_pred.csv')
-cc$errors
+#ADL forecasts
+# 1 step ahead forecast (1 day)
+h1 = adl.rolling.window(Y,nprev,indice = 1,h=1,lag)
+# write.csv(h1$pred,'h1pred.csv')
+
+# 7 step ahead forecasr (1 week)
+h7 = adl.rolling.window(Y,nprev,indice = 1,h=7,lag)
+# write.csv(h7$pred,'h7pred.csv')
+
+# 14 step ahead forecast (2 weeks)
+h14 = adl.rolling.window(Y,nprev,indice = 1,h=14,lag)
+h14$errors
+h14$optlag
+# write.csv(h14$pred,'h14pred.csv')
+
+#Ridge forecast
+h1ridge = ridge.rolling.window(Y,nprev,indice = 1,h=1)
+
