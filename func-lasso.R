@@ -34,7 +34,7 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
 
   comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
   Y2=cbind(Y,comp$scores[,1:4]) #augment predictors by the first 4 principal components
-  aux=embed(Y2,30+lag) #create 30 lags + forecast horizon shift (=lag option)
+  aux=embed(Y2,7+lag) #create 30 lags + forecast horizon shift (=lag option)
 
   y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
   X=aux[,-c(1:(ncol(Y2)*lag))]  # lags of Y (predictors) corresponding to forecast horizon
@@ -73,7 +73,7 @@ runlasso=function(Y,indice,lag,alpha=1,IC="bic", family){
 #IMPORTANT: THIS LAG PASSED IN IS ACTUALLY THE FORECAST HORIZON!!
 lasso.rolling.window=function(Y,nprev,indice=1,lag,alpha=1,IC="bic", family){
 
-  save.coef=matrix(NA,nprev,451) #blank matrix for coefficients at each iteration
+  save.coef=matrix(NA,nprev,141) #blank matrix for coefficients at each iteration
   save.pred=matrix(NA,nprev,1) #blank for forecasts
   model = NULL #create variable to store model
   for(i in nprev:1){ #NB: backwards FOR loop: going from (total sample size - nprev) down to 1

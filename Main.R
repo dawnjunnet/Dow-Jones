@@ -14,13 +14,13 @@ df <- read.csv("final.csv")
 #remove the inflation var that was causing issue
 df <- df[,-1]
 #if there are non-finite datapoints, we just set it to NA
-#is.na(df) <- sapply(df, is.infinite)
+is.na(df) <- sapply(df, is.infinite)
 #set all NA datapoints to 0
-#df[is.na(df)] <- 0
-#write.csv(df,'final.csv')
-
+df[is.na(df)] <- 0
+write.csv(df,'final.csv')
+df <- read.csv("final.csv")
 #check to make sure without_na dataframe should be have the same number of observations as initial df
-#without_na = df[complete.cases(df), ]
+without_na = df[complete.cases(df), ]
 
 #new_DF <- df[rowSums(is.na(df)) > 0,]
 #a1NotIna2 <- sqldf('SELECT * FROM df EXCEPT SELECT * FROM new_DF')
@@ -58,27 +58,25 @@ alpha=1 #set alpha=1 for LASSO
 lasso1a=lasso.rolling.window(Y,nprev,1,1,alpha,IC="bic", "gaussian")
 lasso1a$pred
 write.csv(lasso1a$pred,'lasso1step_pred.csv')
+lasso1a$model
 lasso7a=lasso.rolling.window(Y,nprev,1,7,alpha,IC="bic", "gaussian")
 lasso7a$pred
+lasso7a$model
 write.csv(lasso7a$pred,'lasso7step_pred.csv')
 lasso14a=lasso.rolling.window(Y,nprev,1,14,alpha,IC="bic", "gaussian")
 lasso14a$pred
 lasso14a$model
 write.csv(lasso14a$pred,'lasso14step_pred.csv')
-lasso30a=lasso.rolling.window(Y,nprev,1,30,alpha,IC="bic", "gaussian")
 
 lasso1a.mse1=lasso1a$errors[2]
 write.csv(lasso1a$errors,'lasso1step_errors.csv')
 lasso7a.mse7=lasso7a$errors[2]
 write.csv(lasso7a$errors,'lasso7step_errors.csv')
 lassoa.mse14=lasso14a$errors[2]
-lassoa.mse30=lasso30a$errors[2]
-#lassoa.mse12=lasso12a$errors[2]
+write.csv(lasso14a$errors,'lasso14step_errors.csv')
 
 lassoa.mse1
 lassoa.mse14
-lassoa.mse30
-#lassoa.mse12
 
 pols.lasso1a=pols.rolling.window(Y,nprev,1,7,lasso1a$coef)
 pols.lasso14a=pols.rolling.window(Y,nprev,1,14,lasso3a$coef)
