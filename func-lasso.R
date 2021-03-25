@@ -284,3 +284,54 @@ adl.rolling.window=function(Y,nprev,indice=1,h,lag){
               "optAIC"=model$optAIC)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
 
+runridge=function(Y,indice,h,lag,alpha=0,IC="bic"){
+  
+  comp=princomp(scale(Y,scale=FALSE)) # compute principal components to add as predictors
+  Y2=cbind(Y,comp$scores[,1:4]) #augment predictors by the first 4 principal components
+  aux=embed(Y2,h+7) #create 4 lags + forecast horizon shift (=lag option)
+  
+  y=aux[,indice] #  Y variable aligned/adjusted for missing data due to lags
+  X=aux[,-c(1:(ncol(Y2)*h))]  # lags of Y (predictors) corresponding to forecast horizon   
+  
+  if(h==1){
+    X.out=tail(aux,1)[1:ncol(X)] #retrieve the last  observations if one-step forecast  
+    
+  }else{
+    X.out=aux[,-c(1:(ncol(Y2)*(h-1)))] #delete first (h-1) columns of aux,
+    X.out=tail(X.out,1)[1:ncol(X)] #last observations: y_T,y_t-1...y_t-h
+  }
+  X.out = matrix(X.out,ncol = length(X.out))
+  X.out = cbind(1,X.out)
+  #Here we use the glmnet wrapper written by the authors that does selection on IC:
+  
+  cv = cv.glmnet(X, y, alpha = 0)
+  model = matrix(coef(glmnet(X,y,alpha = 0,lambda = cv$lambda.min)))
+  pred = X.out %*% model
+  
+  return(list("model"=model,"pred"=pred)) #return the estimated model and h-step forecast
+}
+
+ridge.rolling.window=function(Y,nprev,indice=1,h){
+  
+  save.pred=matrix(NA,nprev,1) #blank for forecasts
+  model = list() #create variable to store model
+  for(i in nprev:1){#NB: backwards FOR loop: going from 180 down to 1
+    Y.window=Y[(1+nprev-i):(nrow(Y)-i),] #define the estimation window (first one: 1 to 491, then 2 to 492 etc.)
+    model = runridge(Y.window,indice,h,alpha=0)
+    save.pred[(1+nprev-i),]=model$pred
+    cat('Iteration',(1+nprev-i),"\n")
+  }
+  #Some helpful stuff:
+  real=Y[,indice] #get actual values
+  plot(real,type="l")
+  lines(c(rep(NA,length(real)-nprev),save.pred),col="red") #padded with NA for blanks, plot predictions vs. actual
+  
+  rmse=sqrt(mean((tail(real,nprev)-save.pred)^2)) #compute RMSE
+  mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
+  mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
+  errors=c("rmse"=rmse,"mse"=mse, "mae"=mae) #stack errors in a vector
+  
+  return(list("pred"=save.pred,"errors"=errors)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
+}
+
+
