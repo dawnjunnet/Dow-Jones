@@ -4,23 +4,24 @@ require(sqldf)
 library(sqldf)
 library(glmnet)
 library(HDeconometrics)
+install.packages("ggplot2")
+library("ggplot2")
 
 ##########################################################
 #read data
 #########################################################
 setwd('/Users/kaijing/Documents/EC4304/Dow-Jones/Data')
 df <- read.csv("final.csv")
-#drop first two col of s/n and date respectively
-#remove the inflation var that was causing issue
+#drop date col respectively
 df <- df[,-1]
 #if there are non-finite datapoints, we just set it to NA
-is.na(df) <- sapply(df, is.infinite)
+#is.na(df) <- sapply(df, is.infinite)
 #set all NA datapoints to 0
-df[is.na(df)] <- 0
-write.csv(df,'final.csv')
-df <- read.csv("final.csv")
+#df[is.na(df)] <- 0
+#write.csv(df,'final.csv')
+#df <- read.csv("final.csv")
 #check to make sure without_na dataframe should be have the same number of observations as initial df
-without_na = df[complete.cases(df), ]
+#without_na = df[complete.cases(df), ]
 
 #new_DF <- df[rowSums(is.na(df)) > 0,]
 #a1NotIna2 <- sqldf('SELECT * FROM df EXCEPT SELECT * FROM new_DF')
@@ -40,9 +41,13 @@ oosy = tail(yy,nprev)
 ###############################################################################
 adf.test(yy, output = TRUE)
 
+df$days <- seq.int(nrow(df))
+ggplot(df, aes(x=days, y= dji_pctchg)) + geom_line() + ggtitle("DOWJONES")
+
 #replace with your own source path
 setwd("/Users/kaijing/Documents/EC4304/Dow-Jones")
 source("func-lasso.R")
+source("unconditional-mean.R")
 ###############################################################################
 ## Add on the rest of ur methods here!
 ###############################################################################
@@ -78,31 +83,6 @@ write.csv(lasso14a$errors,'lasso14step_errors.csv')
 lassoa.mse1
 lassoa.mse14
 
-pols.lasso1a=pols.rolling.window(Y,nprev,1,7,lasso1a$coef)
-pols.lasso14a=pols.rolling.window(Y,nprev,1,14,lasso3a$coef)
-pols.lasso30a=pols.rolling.window(Y,nprev,1,30,lasso6a$coef)
-#pols.lasso12a=pols.rolling.window(Y,nprev,1,12,lasso12a$coef)
-
-#Post-LASSO RMSE's:
-plasso.mse1=pols.lasso1a$errors[2]
-plasso.mse14=pols.lasso14a$errors[2]
-plasso.mse30=pols.lasso30a$errors[2]
-#plasso.mse12=pols.lasso12a$errors[2]
-
-plasso.mse1
-plasso.mse14
-plasso.mse30
-#plasso.mse12
-
-pred1a.plasso = forecast(pols.lasso1a$model, tail(Y, 2230), 1, 1, 2)
-pred1a.plasso
-pred14a.plasso = forecast(pols.lasso14a$model, tail(Y, 2230), 1, 14, 2)
-pred14a.plasso
-pred30a.plasso = forecast(pols.lasso30a$model, tail(Y, 2230), 1, 14, 2)
-pred30a.plasso
-#pred12a.plasso = forecast(pols.lasso12a$model, tail(Y, 60), 1, 12, 2)
-#pred12a.plasso
-
 #ADL forecasts
 # 1 step ahead forecast (1 day)
 h1 = adl.rolling.window(Y,nprev,indice = 1,h=1,lag)
@@ -121,3 +101,26 @@ h14$optlag
 #Ridge forecast
 h1ridge = ridge.rolling.window(Y,nprev,indice = 1,h=1)
 
+###############################################################################
+## Rolling Unconditional Mean as the predictor
+###############################################################################
+
+mean1=mean.rolling.window(Y,nprev,1,1)
+write.csv(mean1$pred,'mean1step_pred.csv')
+write.csv(mean1$errors,'mean1step_errors.csv')
+
+mean7=mean.rolling.window(Y,nprev,1,7)
+write.csv(mean7$pred,'mean7step_pred.csv')
+write.csv(mean7$errors,'mean7step_errors.csv')
+
+mean14=mean.rolling.window(Y,nprev,1,14)
+write.csv(mean14$pred,'mean14step_pred.csv')
+write.csv(mean14$errors,'mean14step_errors.csv')
+
+mean.mse1=mean1$errors[2]
+mean.mse7=mean7$errors[2]
+mean.mse14=mean14$errors[2]
+
+mean.mse1
+mean.mse7
+mean.mse14
