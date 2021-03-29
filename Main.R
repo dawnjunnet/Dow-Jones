@@ -4,15 +4,16 @@ require(sqldf)
 library(sqldf)
 library(glmnet)
 library(HDeconometrics)
+install.packages("ggplot2")
+library("ggplot2")
 
 ##########################################################
 #read data
 #########################################################
 setwd('/Users/kaijing/Documents/EC4304/Dow-Jones/Data')
 df <- read.csv("final.csv")
-#drop first two col of s/n and date respectively
-#remove the inflation var that was causing issue
-#df <- df[,-1]
+#drop date col respectively
+df <- df[,-1]
 #if there are non-finite datapoints, we just set it to NA
 #is.na(df) <- sapply(df, is.infinite)
 #set all NA datapoints to 0
@@ -39,6 +40,9 @@ oosy = tail(yy,nprev)
 ## inspect data
 ###############################################################################
 adf.test(yy, output = TRUE)
+
+df$days <- seq.int(nrow(df))
+ggplot(df, aes(x=days, y= dji_pctchg)) + geom_line() + ggtitle("DOWJONES")
 
 #replace with your own source path
 setwd("/Users/kaijing/Documents/EC4304/Dow-Jones")
