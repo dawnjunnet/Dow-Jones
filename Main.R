@@ -48,6 +48,7 @@ ggplot(df, aes(x=days, y= dji_pctchg)) + geom_line() + ggtitle("DOWJONES")
 setwd("/Users/kaijing/Documents/EC4304/Dow-Jones")
 source("func-lasso.R")
 source("unconditional-mean.R")
+source("func-ensemble.R")
 ###############################################################################
 ## Add on the rest of ur methods here!
 ###############################################################################
