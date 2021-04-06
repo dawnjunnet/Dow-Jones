@@ -60,15 +60,15 @@ alpha=1 #set alpha=1 for LASSO
 #Run forecasts for LASSO (BIC)
 #The SP500R dependent variable is in the 1st position
 #forecast horizon 1 day, 1 week, 2 week, 30 days
-lasso1a=lasso.rolling.window(Y,nprev,1,1,alpha,IC="bic", "gaussian")
+lasso1a=lasso.rolling.window(Y,nprev,1,1,alpha,IC="aic", "gaussian")
 lasso1a$pred
 write.csv(lasso1a$pred,'lasso1step_pred.csv')
 lasso1a$model
-lasso7a=lasso.rolling.window(Y,nprev,1,7,alpha,IC="bic", "gaussian")
+lasso7a=lasso.rolling.window(Y,nprev,1,7,alpha,IC="aic", "gaussian")
 lasso7a$pred
 lasso7a$model
 write.csv(lasso7a$pred,'lasso7step_pred.csv')
-lasso14a=lasso.rolling.window(Y,nprev,1,14,alpha,IC="bic", "gaussian")
+lasso14a=lasso.rolling.window(Y,nprev,1,14,alpha,IC="aic", "gaussian")
 lasso14a$pred
 lasso14a$model
 write.csv(lasso14a$pred,'lasso14step_pred.csv')
