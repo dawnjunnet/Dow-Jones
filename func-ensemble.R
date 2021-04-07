@@ -1,71 +1,86 @@
+library(limSolve)
+
+##########################################################
+#standard helper funcs
+#########################################################
+#Auxiliary function to compute root MSE (same as MSE before, but with square root):
+RMSE <- function(pred, truth){ #start and end body of the function by { } - same as a loop
+  return(sqrt(mean((truth - pred)^2)))
+} #end function with a return(output) statement. Here we can go straight to return because the object of interest is a simple function of inputs
+
+MSE <- function(pred, truth){ #start and end body of the function by { } - same as a loop
+  return(mean((truth - pred)^2))
+} #end function with a return(output) statement. Here we can go straight to return because the object of interest is a simple function of inputs
+
+
 ###############################################################################
 ## Granger-Ramanathan combinations (Ensemble Learning)
 ###############################################################################
 
-y_test = tail(data.matrix(yy),60)
-y_validation = tail(data.matrix(yy)[1:(nrow(df)-ntest),],60)
+y_test = tail(data.matrix(yy),nprev)
+y_validation = tail(data.matrix(yy)[1:(nrow(df)-nprev),],nprev)
+
+setwd('/Users/kaijing/Documents/EC4304/Dow-Jones/predictions')
+ridge1 <- read.csv("h1pred(ridge).csv")
+ridge1Pred = ridge1[2]
+lasso1 <- read.csv("lasso1step_pred.csv")
+lasso1Pred = lasso1[2]
+adl1 <- read.csv("h1pred(ADL).csv")
+adl1Pred = adl1[2]
+rw1 <- read.csv("fcast_rollingh1.csv")
+rw1Pred = rw1[2]
+
 #GR weights, no constant, all restrictions in place
 ##1-step ahead forecast
-fmat1=cbind(ridge1a$pred, lasso1a$pred, elastic1a$pred, ann1a$pred, boosted1a$pred, rf1a$pred)
+fmat1=cbind(ridge1Pred, lasso1Pred, adl1Pred, rw1Pred)
 nregressors = ncol(fmat1)
 
-gru1=lsei(fmat1, y_test, c=rep(1,nregressors), d=1, e=diag(nregressors), f=rep(0,nregressors))
-View(gru1) #Examine weights; only ridge has a positive coefficient of 1
+gru1=lsei(fmat1, y_test, f=rep(0,nregressors))
+View(gru1) #Examine weights; this is in the order of ridge, lasso, adl, rw
 
 #Combine the forecasts with nonzero weights:
-gre.pred1a=gru1[1]*ridge1a$pred+gru1[2]*lasso1a$pred+gru1[3]*elastic1a$pred+gru1[6]*rf1a$pred
-#MSE is the same as ridge regression
-GRE.MSE1 = MSE(y_test,gre.pred1a)
+gre.pred1a=gru1[1]*ridge1Pred+gru1[2]*lasso1Pred+gru1[3]*adl1Pred+gru1[4]*rw1Pred
+#MSE 
+gre1 = as.numeric(gre.pred1a$V1)
+GRE.MSE1 = MSE(y_test,gre1)
+GRE.MSE1 
 
-##3-step ahead forecast
-fmat3=cbind(ridge3a$pred, lasso3a$pred, elastic3a$pred, ann3a$pred, boosted3a$pred, rf3a$pred)
-gru3=lsei(fmat3, y_test, c=rep(1,nregressors), d=1, e=diag(nregressors), f=rep(0,nregressors))
-View(gru3) #Examine weights; only ridge has a positive coefficient of 1
+##7-step ahead forecast
+ridge7 <- read.csv("h7pred(ridge).csv")
+ridge7Pred = ridge7[2]
+lasso7 <- read.csv("lasso7step_pred.csv")
+lasso7Pred = lasso7[2]
+adl7 <- read.csv("h7pred(ADL).csv")
+adl7Pred = adl7[2]
+rw7 <- read.csv("fcast_rollingh7.csv")
+rw7Pred = rw7[2]
 
-#Combine the forecasts with nonzero weights:
-gre.pred3a=gru3[1]*ridge3a$pred+gru3[2]*lasso3a$pred+gru3[3]*elastic3a$pred*gru3[4]*ann3a$pred+gru3[6]*rf3a$pred
-GRE.MSE3 = MSE(y_test,gre.pred3a)
-
-##6-step ahead forecast
-fmat6=cbind(ridge6a$pred, lasso6a$pred, elastic6a$pred, ann6a$pred, boosted6a$pred, rf6a$pred)
-nregressors = ncol(fmat6)
-gru6=lsei(fmat6, y_test, c=rep(1,nregressors), d=1, e=diag(nregressors), f=rep(0,nregressors))
-View(gru6) #Examine weights; only ridge has a positive coefficient of 1
-
-#Combine the forecasts with nonzero weights:
-gre.pred6a=gru6[1]*ridge6a$pred+gru6[2]*lasso6a$pred+gru6[3]*elastic6a$pred+gru6[4]*ann6a$pred+gru6[5]*boosted6a$pred
-GRE.MSE6 = MSE(y_test,gre.pred6a)
-
-##12-step ahead forecast
-fmat12=cbind(ridge12a$pred, lasso12a$pred, elastic12a$pred, ann12a$pred, boosted12a$pred, rf12a$pred)
-nregressors = ncol(fmat12)
-gru12=lsei(fmat12, y_test, c=rep(1,nregressors), d=1, e=diag(nregressors), f=rep(0,nregressors))
-View(gru12) #Examine weights; only ridge has a positive coefficient of 1
+fmat7=cbind(ridge7Pred, lasso7Pred, adl7Pred, rw7Pred)
+nregressors = ncol(fmat7)
+gru7=lsei(fmat7, y_test, f=rep(0,nregressors))
+View(gru7) #Examine weights;
 
 #Combine the forecasts with nonzero weights:
-gre.pred12a=gru12[1]*ridge12a$pred+gru12[2]*lasso12a$pred+gru12[3]*elastic12a$pred+gru12[4]*ann12a$pred
-GRE.MSE12=MSE(y_test,gre.pred12a)
+gre.pred7a=gru7[1]*ridge7+gru7[2]*lasso7+gru7[3]*adl7Pred+gru7[4]*rw7Pred
+gre7 = as.numeric(gre.pred7a$V1)
+GRE.MSE7 = MSE(y_test,gre7)
 
-#1-step ahead forecast
-rlassocomb.fit = rlasso(y_validation~fmat1,  post=FALSE,intercept=FALSE)
-#Form combination:
-comblasso1=cbind(ridge1a$pred, lasso1a$pred, elastic1a$pred, ann1a$pred, boosted1a$pred, rf1a$pred)%*%rlassocomb.fit$coefficients
-LGRE.MSE1 = MSE(y_test,comblasso1)
+##14-step ahead forecast
+ridge14 <- read.csv("h14pred(ridge).csv")
+ridge14Pred = ridge14[2]
+lasso14 <- read.csv("lasso14step_pred.csv")
+lasso14Pred = lasso14[2]
+adl14 <- read.csv("h14pred(ADL).csv")
+adl14Pred = adl14[2]
+rw14 <- read.csv("fcast_rollingh14.csv")
+rw14Pred = rw14[2]
 
-#3-step ahead forecast
-rlassocomb.fit = rlasso(y_validation~fmat3,  post=FALSE,intercept=FALSE)
-#Form combination:
-comblasso3=cbind(ridge3a$pred, lasso3a$pred, elastic3a$pred, ann3a$pred, boosted3a$pred, rf3a$pred)%*%rlassocomb.fit$coefficients
-LGRE.MSE3 = MSE(y_test,comblasso3)
+fmat14=cbind(ridge14Pred, lasso14Pred, adl14Pred, rw14Pred)
+nregressors = ncol(fmat14)
+gru14=lsei(fmat14, y_test, f=rep(0,nregressors))
+View(gru14) #Examine weights; 
 
-#6-step ahead forecast
-rlassocomb.fit = rlasso(y_validation~fmat6,  post=FALSE,intercept=FALSE)
-#Form combination:
-comblasso6=cbind(ridge6a$pred, lasso6a$pred, elastic6a$pred, ann6a$pred, boosted6a$pred, rf6a$pred)%*%rlassocomb.fit$coefficients
-LGRE.MSE6 = MSE(y_test,comblasso6)
-
-#12-step ahead forecast
-rlassocomb.fit = rlasso(y_validation~fmat12,  post=FALSE,intercept=FALSE)
-#Form combination:
-comblasso12=cbind(ridge12a$pred, lasso12a$pred, elastic12a$pred, ann12a$pred, boosted12a$pred, rf12a$pred)%*%rlassocomb.fit$coefficients
-LGRE.MSE12 = MSE(y_test,comblasso12)
+#Combine the forecasts with nonzero weights:
+gre.pred14a=gru14[1]*ridge14+gru14[2]*lasso14+gru14[3]*adl14Pred+gru14[4]*rw14Pred
+gre14 = as.numeric(gre.pred14a$V1)
+GRE.MSE14 = MSE(y_test,gre14)
