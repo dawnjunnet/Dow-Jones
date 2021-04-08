@@ -334,3 +334,26 @@ ridge.rolling.window=function(Y,nprev,indice=1,h){
   return(list("pred"=save.pred,"errors"=errors)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
 }
 
+rw.rolling.window=function(Y,nprev,h){
+  
+  save.pred=matrix(NA,nprev,1) #blank for forecasts
+  model = list() #create variable to store model
+  for(i in nprev:1){#NB: backwards FOR loop: going from 180 down to 1
+    Y.window=Y[(1+nprev-i):(nrow(Y)-i-(h-1)),] #define the estimation window (first one: 1 to 491, then 2 to 492 etc.)
+    model = rwf(Y.window,h=h)$mean[h]
+    save.pred[(1+nprev-i),]=model
+    cat('Iteration',(1+nprev-i),"\n")
+  }
+  #Some helpful stuff:
+  real=Y #get actual values
+  plot(real,type="l")
+  lines(c(rep(NA,length(real)-nprev),save.pred),col="red") #padded with NA for blanks, plot predictions vs. actual
+  
+  rmse=sqrt(mean((tail(real,nprev)-save.pred)^2)) #compute RMSE
+  mse=mean((tail(real,nprev)-save.pred)^2) #compute MSE
+  mae=mean(abs(tail(real,nprev)-save.pred)) #compute MAE (Mean Absolute Error)
+  errors=c("rmse"=rmse,"mse"=mse, "mae"=mae) #stack errors in a vector
+  
+  return(list("pred"=save.pred,"errors"=errors)) #return forecasts, history of estimated coefficients, and RMSE and MAE for the period.
+}
+
