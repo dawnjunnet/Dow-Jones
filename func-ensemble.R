@@ -1,4 +1,6 @@
+setwd('/Users/dawnstaana/Documents/NUS/Year 4/Sem 2/EC4304/Data')
 library(limSolve)
+library(readr)
 
 ##########################################################
 #standard helper funcs
@@ -16,19 +18,23 @@ MSE <- function(pred, truth){ #start and end body of the function by { } - same 
 ###############################################################################
 ## Granger-Ramanathan combinations (Ensemble Learning)
 ###############################################################################
+df = read.csv('final2.csv')
+Y = data.matrix(df)
+yy = df$dji_pctchg
+nprev = 2495
 
 y_test = tail(data.matrix(yy),nprev)
 y_validation = tail(data.matrix(yy)[1:(nrow(df)-nprev),],nprev)
 
-setwd('/Users/kaijing/Documents/EC4304/Dow-Jones/predictions')
 ridge1 <- read.csv("h1pred(ridge).csv")
 ridge1Pred = ridge1[2]
 lasso1 <- read.csv("lasso1step_pred.csv")
 lasso1Pred = lasso1[2]
 adl1 <- read.csv("h1pred(ADL).csv")
 adl1Pred = adl1[2]
-rw1 <- read.csv("fcast_rollingh1.csv")
-rw1Pred = rw1[2]
+rw1 <- read_csv("fcast_rollingh1.csv", col_names = FALSE)
+rw1 = as.data.frame(rw1[2])
+rw1Pred = rw1
 
 #GR weights, no constant, all restrictions in place
 ##1-step ahead forecast
@@ -39,7 +45,7 @@ gru1=lsei(fmat1, y_test, f=rep(0,nregressors))
 View(gru1) #Examine weights; this is in the order of ridge, lasso, adl, rw
 
 #Combine the forecasts with nonzero weights:
-gre.pred1a=gru1[1]*ridge1Pred+gru1[2]*lasso1Pred+gru1[3]*adl1Pred+gru1[4]*rw1Pred
+gre.pred1a=gru1$X[1]*ridge1Pred+gru1$X[2]*lasso1Pred+gru1$X[3]*adl1Pred+gru1$X[4]*rw1Pred
 #MSE 
 gre1 = as.numeric(gre.pred1a$V1)
 GRE.MSE1 = MSE(y_test,gre1)
@@ -52,8 +58,9 @@ lasso7 <- read.csv("lasso7step_pred.csv")
 lasso7Pred = lasso7[2]
 adl7 <- read.csv("h7pred(ADL).csv")
 adl7Pred = adl7[2]
-rw7 <- read.csv("fcast_rollingh7.csv")
-rw7Pred = rw7[2]
+rw7 <- read_csv("fcast_rollingh7.csv", col_names = FALSE)
+rw7 = as.data.frame(rw7[2])
+rw7Pred = rw7
 
 fmat7=cbind(ridge7Pred, lasso7Pred, adl7Pred, rw7Pred)
 nregressors = ncol(fmat7)
@@ -61,9 +68,10 @@ gru7=lsei(fmat7, y_test, f=rep(0,nregressors))
 View(gru7) #Examine weights;
 
 #Combine the forecasts with nonzero weights:
-gre.pred7a=gru7[1]*ridge7+gru7[2]*lasso7+gru7[3]*adl7Pred+gru7[4]*rw7Pred
+gre.pred7a=gru7$X[1]*ridge7Pred+gru7$X[2]*lasso7Pred+gru7$X[3]*adl7Pred+gru7$X[4]*rw7Pred
 gre7 = as.numeric(gre.pred7a$V1)
 GRE.MSE7 = MSE(y_test,gre7)
+GRE.MSE7
 
 ##14-step ahead forecast
 ridge14 <- read.csv("h14pred(ridge).csv")
@@ -72,8 +80,9 @@ lasso14 <- read.csv("lasso14step_pred.csv")
 lasso14Pred = lasso14[2]
 adl14 <- read.csv("h14pred(ADL).csv")
 adl14Pred = adl14[2]
-rw14 <- read.csv("fcast_rollingh14.csv")
-rw14Pred = rw14[2]
+rw14 <- read_csv("fcast_rollingh14.csv", col_names = FALSE)
+rw14 = as.data.frame(rw14[2])
+rw14Pred = rw14
 
 fmat14=cbind(ridge14Pred, lasso14Pred, adl14Pred, rw14Pred)
 nregressors = ncol(fmat14)
@@ -81,6 +90,7 @@ gru14=lsei(fmat14, y_test, f=rep(0,nregressors))
 View(gru14) #Examine weights; 
 
 #Combine the forecasts with nonzero weights:
-gre.pred14a=gru14[1]*ridge14+gru14[2]*lasso14+gru14[3]*adl14Pred+gru14[4]*rw14Pred
+gre.pred14a=gru14[1]*ridge14Pred+gru14[2]*lasso14Pred+gru14[3]*adl14Pred+gru14[4]*rw14Pred
 gre14 = as.numeric(gre.pred14a$V1)
 GRE.MSE14 = MSE(y_test,gre14)
+GRE.MSE14
