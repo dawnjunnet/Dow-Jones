@@ -1,6 +1,10 @@
+rm(list = ls())
 setwd('/Users/dawnstaana/Documents/NUS/Year 4/Sem 2/EC4304/Data')
 library(limSolve)
 library(readr)
+library(forecast) # rwf function
+library(Metrics)  # mse function
+library(HDeconometrics)
 
 ##########################################################
 #standard helper funcs
@@ -14,65 +18,112 @@ MSE <- function(pred, truth){ #start and end body of the function by { } - same 
   return(mean((truth - pred)^2))
 } #end function with a return(output) statement. Here we can go straight to return because the object of interest is a simple function of inputs
 
+MAE = function(pred,truth){
+  return(mean(abs(truth-pred)))
+}
 
 ###############################################################################
 ## Granger-Ramanathan combinations (Ensemble Learning)
 ###############################################################################
 df = read.csv('final2.csv')
 Y = data.matrix(df)
+Y2 = data.matrix(df$dji_pctchg)
+Y2 = data.matrix(Y2[1:(nrow(Y) - nprev),])
 yy = df$dji_pctchg
 nprev = 2495
 oosy = tail(yy,nprev)
 
 y_test = tail(data.matrix(yy),nprev)
-y_validation = tail(data.matrix(yy)[1:(nrow(df)-nprev),],nprev)
+y_validation = tail(data.matrix(yy)[1:(nrow(df)-nprev),],npval)
 
-ridge1 <- read.csv("h1pred(ridge).csv")
-ridge1Pred = ridge1[2]
-lasso1 <- read.csv("lasso1step_pred.csv")
-lasso1Pred = lasso1[2]
-adl1 <- read.csv("h1pred(ADL).csv")
-adl1Pred = adl1[2]
-rw1 <- read_csv("fcast_rollingh1.csv", col_names = FALSE)
-rw1 = data.frame(rw1[2])
-rw1_error = RMSE(oosy,rw1$X2)
-rw1Pred = rw1
-# write.csv(rw1_error,'rw_error.csv')
+npval = 1050
+train = Y[1:(nrow(Y) - nprev),]
+#####################
+# 1 step validation #
+#####################
+# RIDGE #
+h1val = ridge.rolling.window(train,npval,indice = 1,h=1)
+# write.csv(h1val$pred,'ridge_pred(validation).csv',row.names = F)
 
-#GR weights, no constant, all restrictions in place
-##1-step ahead forecast
-fmat1=cbind(ridge1Pred, lasso1Pred, adl1Pred, rw1Pred)
-nregressors = ncol(fmat1)
+# LASSO #
+h1val_lasso = lasso.rolling.window(train,npval,1,1,alpha,IC="aic", "gaussian")
+# write.csv(h1val_lasso$pred,'lasso_pred(validation).csv',row.names = F)
 
-gru1=lsei(fmat1, y_test, f=rep(0,nregressors))
-# View(gru1) #Examine weights; this is in the order of ridge, lasso, adl, rw
+# ADL #
+h1val_adl = adl.rolling.window(train,npval,indice = 1,h = 1)
+# write.csv(h1val_adl$pred, 'adl_pred(validation).csv',row.names = F)
 
-#Combine the forecasts with nonzero weights:
-gre.pred1a=gru1$X[1]*ridge1Pred+gru1$X[2]*lasso1Pred+gru1$X[3]*adl1Pred+gru1$X[4]*rw1Pred
-#MSE 
-gre1 = as.numeric(gre.pred1a$V1)
-GRE.MSE1 = MSE(y_test,gre1)
-GRE.MSE1 
-# write.csv(GRE.MSE1,'mse(gre)1step.csv',row.names = F)
+# RW use Y2 for this #
+h1val_rw = rw.rolling.window(Y2,nprev=npval,h=1)
+# write.csv(h1val_rw$pred,'rw_pred(validation).csv',row.names = F)
 
-##7-step ahead forecast
-ridge7 <- read.csv("h7pred(ridge).csv")
-ridge7Pred = ridge7[2]
-lasso7 <- read.csv("lasso7step_pred.csv")
-lasso7Pred = lasso7[2]
-adl7 <- read.csv("h7pred(ADL).csv")
-adl7Pred = adl7[2]
-rw7 <- read.csv("fcast_rollingh7.csv", stringsAsFactors = F)
-rw7Pred = rw7[2]
-# write.csv(rw7_error,'rw7_error.csv',row.names = F)
+#####################
+# 7 step validation #
+#####################
+# RIDGE #
+h7val = ridge.rolling.window(train,npval,indice = 1,h=7)
+# write.csv(h7val$pred,'ridgeh7_pred(validation).csv',row.names = F)
+
+# LASSO #
+h7val_lasso = lasso.rolling.window(train,npval,1,7,alpha,IC="aic", "gaussian")
+# write.csv(h7val_lasso$pred,'lassoh7_pred(validation).csv',row.names = F)
+
+# ADL #
+h7val_adl = adl.rolling.window(train,npval,indice = 1,h = 7)
+# write.csv(h7val_adl$pred, 'adlh7_pred(validation).csv',row.names = F)
+
+# RW use Y2 for this #
+h7val_rw = rw.rolling.window(Y2,nprev=npval,h=7)
+# write.csv(h7val_rw$pred,'rwh7_pred(validation).csv',row.names = F)
 
 fmat7=cbind(ridge7Pred, lasso7Pred, adl7Pred, rw7Pred)
 nregressors = ncol(fmat7)
 gru7=lsei(fmat7, y_test, f=rep(0,nregressors))
 # View(gru7) #Examine weights;
 
+#####################
+# 14 step validation #
+#####################
+# RIDGE #
+h14val = ridge.rolling.window(train,npval,indice = 1,h=14)
+# write.csv(h14val$pred,'ridgeh14_pred(validation).csv',row.names = F)
+
+# LASSO #
+h14val_lasso = lasso.rolling.window(train,npval,1,14,alpha,IC="aic", "gaussian")
+# write.csv(h14val_lasso$pred,'lassoh14_pred(validation).csv',row.names = F)
+
+# ADL #
+h14val_adl = adl.rolling.window(train,npval,indice = 1,h = 14)
+# write.csv(h14val_adl$pred, 'adlh14_pred(validation).csv',row.names = F)
+
+# RW use Y2 for this #
+h14val_rw = rw.rolling.window(Y2,nprev=npval,h=14)
+# write.csv(h14val_rw$pred,'rwh14_pred(validation).csv',row.names = F)
+
+fmat7=cbind(ridge7Pred, lasso7Pred, adl7Pred, rw7Pred)
+nregressors = ncol(fmat7)
+gru7=lsei(fmat7, y_test, f=rep(0,nregressors))
+# View(gru7) #Examine weights;
+
+#GR weights, no constant, all restrictions in place
+##1-step ahead forecast
+fmat1=cbind(h1val$pred, h1val_lasso$pred, h1val_adl$pred, h1val_rw$pred)
+colnames(fmat1) = c('ridge','lasso','adl','rw')
+nregressors = ncol(fmat1)
+
+gru1=lsei(fmat1, y_validation, f=rep(0,nregressors))
+# View(gru1) #Examine weights; this is in the order of ridge, lasso, adl, rw
+
+#Combine the forecasts with nonzero weights:
+gre.pred1a=gru1$X[1]*h1val$pred+gru1$X[2]*h1val_lasso$pred+gru1$X[3]*h1val_adl$pred+gru1$X[4]*h1val_rw$pred
+#MSE 
+# write.csv(as.data.frame(gre.pred1a$V1),'grweights1_pred.csv')
+GRE.MSE1 = MSE(y_validation,as.numeric(gre.pred1a))
+GRE.MSE1 
+# write.csv(GRE.MSE1,'mse(gre)1step.csv',row.names = F)
 #Combine the forecasts with nonzero weights:
 gre.pred7a=gru7$X[1]*ridge7Pred+gru7$X[2]*lasso7Pred+gru7$X[3]*adl7Pred+gru7$X[4]*rw7Pred
+# write.csv(as.data.frame(gre.pred7a$V1),'grweights7_pred.csv')
 gre7 = as.numeric(gre.pred7a$V1)
 GRE.MSE7 = MSE(y_test,gre7)
 GRE.MSE7
@@ -97,6 +148,7 @@ gru14=lsei(fmat14, y_test, f=rep(0,nregressors))
 
 #Combine the forecasts with nonzero weights:
 gre.pred14a=gru14[1]*ridge14Pred+gru14[2]*lasso14Pred+gru14[3]*adl14Pred+gru14[4]*rw14Pred
+# write.csv(as.data.frame(gre.pred14a$V1),'grweights14_pred.csv')
 gre14 = as.numeric(gre.pred14a$V1)
 GRE.MSE14 = MSE(y_test,gre14)
 GRE.MSE14
