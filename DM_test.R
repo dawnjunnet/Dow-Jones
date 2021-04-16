@@ -23,8 +23,10 @@ lasso1 = lasso1[2]
 adl1 = read.csv('h1pred(ADL).csv',stringsAsFactors = F)
 adl1 = adl1[2]
 
-rw1 = read_csv('fcast_rollingh1.csv',col_names = F)
-rw1 = as.data.frame(rw1)[2]
+rw1 = read.csv('fcast_rollingh1.csv',stringsAsFactors = F)
+rw1 = rw1[2]
+
+fc1 = read.csv('forecast_combination_predh1.csv',stringsAsFactors = F)
 
 DM_same = function(f1,f2,y,num){
   xx = DM.test(f1,f2,y,loss.type = 'SE',h=num)
@@ -40,16 +42,22 @@ DM_same = function(f1,f2,y,num){
 DM_same(mean1$V1,ridge1$V1,oosy,1)
 DM_same(mean1$V1,lasso1$V1,oosy,1)
 DM_same(mean1$V1,adl1$V1,oosy,1)
-DM_same(mean1$V1,rw1$X2,oosy,1)
+DM_same(mean1$V1,rw1$V1,oosy,1)
+DM_same(mean1$V1,fc1$V1,oosy,1)
 
 DM_same(ridge1$V1,lasso1$V1,oosy,1)
 DM_same(ridge1$V1,adl1$V1,oosy,1)
-DM_same(ridge1$V1,rw1$X2,oosy,1)
+DM_same(ridge1$V1,rw1$V1,oosy,1)
+DM_same(ridge1$V1,fc1$V1,oosy,1)
 
 DM_same(lasso1$V1,adl1$V1,oosy,1)
-DM_same(lasso1$V1,rw1$X2,oosy,1)
+DM_same(lasso1$V1,rw1$V1,oosy,1)
+DM_same(lasso1$V1,fc1$V1,oosy,1)
 
-DM_same(adl1$V1,rw1$X2,oosy,1)
+DM_same(adl1$V1,rw1$V1,oosy,1)
+DM_same(adl1$V1,fc1$V1,oosy,1)
+DM_same(fc1$V1,rw1$V1,oosy,1)
+
 
 ############################
 # 7 step loss differential #
@@ -66,22 +74,30 @@ lasso7 = lasso7[2]
 adl7 = read.csv('h7pred(ADL).csv',stringsAsFactors = F)
 adl7 = adl7[2]
 
-rw7 = read.csv('fcast_rolling_h7.csv',stringsAsFactors = F)
+rw7 = read.csv('fcast_rollingh7.csv',stringsAsFactors = F)
 rw7 = rw7[2]
 
-DM_same(mean7$V1,ridge7$V1,oosy,1)
-DM_same(mean7$V1,lasso7$V1,oosy,1)
-DM_same(mean7$V1,adl7$V1,oosy,1)
-DM_same(mean7$V1,rw7$V1,oosy,1)
+fc7 = read.csv('forecast_combination_predh7.csv',stringsAsFactors = F)
 
-DM_same(ridge7$V1,lasso7$V1,oosy,1)
-DM_same(ridge7$V1,adl7$V1,oosy,1)
-DM_same(ridge7$V1,rw7$V1,oosy,1)
+DM_same(mean7$V1,ridge7$V1,oosy,7)
+DM_same(mean7$V1,lasso7$V1,oosy,7)
+DM_same(mean7$V1,adl7$V1,oosy,7)
+DM_same(mean7$V1,rw7$V1,oosy,7)
+DM_same(mean7$V1,fc7$V1,oosy,7)
 
-DM_same(lasso7$V1,adl7$V1,oosy,1)
-DM_same(lasso7$V1,rw7$V1,oosy,1)
+DM_same(ridge7$V1,lasso7$V1,oosy,7)
+DM_same(ridge7$V1,adl7$V1,oosy,7)
+DM_same(ridge7$V1,rw7$V1,oosy,7)
+DM_same(ridge7$V1,fc7$V1,oosy,1)
 
-DM_same(adl7$V1,rw7$V1,oosy,1)
+DM_same(lasso7$V1,adl7$V1,oosy,7)
+DM_same(lasso7$V1,rw7$V1,oosy,7)
+DM_same(lasso7$V1,fc7$V1,oosy,1)
+
+DM_same(adl7$V1,rw7$V1,oosy,7)
+DM_same(adl7$V1,fc7$V1,oosy,7)
+
+DM_same(fc7$V1,rw7$V1,oosy,7)
 
 #############################
 # 14 step loss differential #
@@ -98,22 +114,30 @@ lasso14 = lasso14[2]
 adl14 = read.csv('h14pred(ADL).csv',stringsAsFactors = F)
 adl14 = adl14[2]
 
-rw14 = read.csv('fcast_rolling_h14.csv',stringsAsFactors = F)
+rw14 = read.csv('fcast_rollingh14.csv',stringsAsFactors = F)
 rw14 = rw14[2]
 
-DM_same(mean14$V1,ridge14$V1,oosy,1)
-DM_same(mean14$V1,lasso14$V1,oosy,1)
-DM_same(mean14$V1,adl14$V1,oosy,1)
-DM_same(mean14$V1,rw14$V1,oosy,1)
+fc14 = read.csv('forecast_combination_predh14.csv',stringsAsFactors = F)
 
-DM_same(ridge14$V1,lasso14$V1,oosy,1)
-DM_same(ridge14$V1,adl14$V1,oosy,1)
-DM_same(ridge14$V1,rw14$V1,oosy,1)
+DM_same(mean14$V1,ridge14$V1,oosy,14)
+DM_same(mean14$V1,lasso14$V1,oosy,14)
+DM_same(mean14$V1,adl14$V1,oosy,14)
+DM_same(mean14$V1,rw14$V1,oosy,14)
+DM_same(mean14$V1,fc14$V1,oosy,7)
 
-DM_same(lasso14$V1,adl14$V1,oosy,1)
-DM_same(lasso14$V1,rw14$V1,oosy,1)
+DM_same(ridge14$V1,lasso14$V1,oosy,14)
+DM_same(ridge14$V1,adl14$V1,oosy,14)
+DM_same(ridge14$V1,rw14$V1,oosy,14)
+DM_same(ridge14$V1,fc14$V1,oosy,1)
 
-DM_same(adl14$V1,rw14$V1,oosy,1)
+DM_same(lasso14$V1,adl14$V1,oosy,14)
+DM_same(lasso14$V1,rw14$V1,oosy,14)
+DM_same(lasso14$V1,fc14$V1,oosy,1)
+
+DM_same(adl14$V1,rw14$V1,oosy,14)
+DM_same(adl14$V1,fc14$V1,oosy,14)
+
+DM_same(fc14$V1,rw14$V1,oosy,14)
 
 
 
