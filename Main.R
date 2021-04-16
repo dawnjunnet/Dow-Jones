@@ -100,7 +100,33 @@ h14$optlag
 # write.csv(h14$pred,'h14pred.csv')
 
 #Ridge forecast
+# 1 step ahead forecast (1 day)
 h1ridge = ridge.rolling.window(Y,nprev,indice = 1,h=1)
+# write.csv(h1ridge$pred,'h1pred(ridge).csv')
+# write.csv(h1ridge$errors,'h1error(ridge).csv')
+
+ridge1_pred = read.csv('h1pred(ridge).csv',stringsAsFactors = F)
+ridge1_pred$X = NULL
+plot(yy,type = 'l',main = 'Ridge 1 step forecast',ylab = 'dji pct change')
+lines(c(rep(NA,length(yy)-nprev),ridge1_pred$V1),col="red")
+
+# 7 step ahead forecast (1 week)
+h7ridge = ridge.rolling.window(Y,nprev,indice = 1,h=7)
+# write.csv(h7ridge$pred,'h7pred(ridge).csv')
+# write.csv(h7ridge$error,'h7error(ridge).csv')
+ridge7_pred = read.csv('h7pred(ridge).csv',stringsAsFactors = F)
+ridge7_pred$X = NULL
+plot(yy,type = 'l',main = 'Ridge 7 step forecast',ylab = 'dji pct change')
+lines(c(rep(NA,length(yy)-nprev),ridge7_pred$V1),col="red")
+
+# 14 step ahead forecast (2 weeks)
+h14ridge = ridge.rolling.window(Y,nprev,indice = 1,h=714)
+# write.csv(h14ridge$pred,'h14pred(ridge).csv')
+# write.csv(h14ridge$error,'h14error(ridge).csv')
+ridge14_pred = read.csv('h14pred(ridge).csv',stringsAsFactors = F)
+ridge14_pred$X = NULL
+plot(yy,type = 'l',main = 'Ridge 14 step forecast',ylab = 'dji pct change')
+lines(c(rep(NA,length(yy)-nprev),ridge14_pred$V1),col="red")
 
 ###############################################################################
 ## Rolling Unconditional Mean as the predictor
